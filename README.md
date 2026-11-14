@@ -27,7 +27,7 @@ Flakes only see files tracked by git, so when installing from a local checkout, 
 Try it without installing:
 
 ```sh
-nix run github:<your-user>/tmux-project-switcher -- slots
+nix run github:Magiclovekorean/tmux-project-switcher -- slots
 # or, from a local checkout:
 nix run . -- slots
 ```
@@ -35,7 +35,7 @@ nix run . -- slots
 Install into your user profile:
 
 ```sh
-nix profile install github:<your-user>/tmux-project-switcher
+nix profile install github:Magiclovekorean/tmux-project-switcher
 # or, from a local checkout:
 nix profile install .
 ```
@@ -46,8 +46,8 @@ Add the flake as an input of your configuration flake:
 
 ```nix
 # flake.nix
-inputs.tmux-project-switcher.url = "github:<your-user>/tmux-project-switcher";
-# before publishing, a local checkout works too:
+inputs.tmux-project-switcher.url = "github:Magiclovekorean/tmux-project-switcher";
+# for development, a local checkout works too:
 # inputs.tmux-project-switcher.url = "path:/home/<you>/path/to/tmux-project-switcher";
 ```
 
