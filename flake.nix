@@ -35,6 +35,7 @@
           meta = {
             description = "Jump between project directories and tmux sessions with fzf";
             mainProgram = "tmux-project-switcher";
+            homepage = "https://github.com/Magiclovekorean/tmux-project-switcher";
             license = pkgs.lib.licenses.mit;
           };
         };
