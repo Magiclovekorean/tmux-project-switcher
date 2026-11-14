@@ -16,6 +16,70 @@ Jump between project directories and tmux sessions from one fuzzy finder.
 
 ## Install
 
+### With Nix (flakes)
+
+The flake builds the package, runs the unit tests, and wraps the binary so `tmux` and `fzf`
+are on its `PATH` (after your own, so it uses the same tmux as your running server).
+
+Flakes only see files tracked by git, so when installing from a local checkout, run
+`git add -A` first. Committing is not required.
+
+Try it without installing:
+
+```sh
+nix run github:<your-user>/tmux-project-switcher -- slots
+# or, from a local checkout:
+nix run . -- slots
+```
+
+Install into your user profile:
+
+```sh
+nix profile install github:<your-user>/tmux-project-switcher
+# or, from a local checkout:
+nix profile install .
+```
+
+#### With Home Manager (NixOS or standalone)
+
+Add the flake as an input of your configuration flake:
+
+```nix
+# flake.nix
+inputs.tmux-project-switcher.url = "github:<your-user>/tmux-project-switcher";
+# before publishing, a local checkout works too:
+# inputs.tmux-project-switcher.url = "path:/home/<you>/path/to/tmux-project-switcher";
+```
+
+Pass `inputs` to your Home Manager modules (`extraSpecialArgs = { inherit inputs; };`
+for standalone Home Manager, or `home-manager.extraSpecialArgs` in NixOS), then in a module:
+
+```nix
+{ inputs, pkgs, ... }:
+{
+  home.packages = [
+    inputs.tmux-project-switcher.packages.${pkgs.system}.default
+  ];
+
+  # Optional: manage the config file from Nix.
+  xdg.configFile."tmux-project-switcher/config.toml".text = ''
+    roots = ["$HOME/code", { path = "$HOME/work", depth = 2 }]
+
+    [slot.logs]
+    command = "tail -f /var/log/app.log"
+  '';
+}
+```
+
+After changing the input, update the lock file and switch:
+
+```sh
+nix flake update tmux-project-switcher
+home-manager switch    # or: sudo nixos-rebuild switch
+```
+
+### With pip
+
 ```sh
 pip install .
 ```
