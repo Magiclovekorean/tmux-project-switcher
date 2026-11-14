@@ -86,28 +86,71 @@ pip install .
 
 ## Configuration
 
-`$TMUX_PROJECT_SWITCHER_CONFIG`, or `$XDG_CONFIG_HOME/tmux-project-switcher/config.toml` (default `~/.config/tmux-project-switcher/config.toml`):
+The config file is read from the first of these that applies:
+
+1. `$TMUX_PROJECT_SWITCHER_CONFIG`, if set (`~` is expanded).
+2. `$XDG_CONFIG_HOME/tmux-project-switcher/config.toml`, if `XDG_CONFIG_HOME` is set.
+3. `~/.config/tmux-project-switcher/config.toml`.
+
+A complete example:
 
 ```toml
-# Directories whose children are projects. Plain strings mean depth 1.
-roots = ["~/code", { path = "~/work", depth = 2 }]
+# Project roots: directories whose children are projects.
+roots = [
+  "~/code",                          # depth 1: ~/code/<project>
+  { path = "~/work", depth = 2 },    # depth 2: ~/work/<group>/<project>
+]
 
-# A slot is a command started once per session and re-focused later.
+# Slots: commands started once per session and re-focused on later runs.
 [slot.logs]
-command = "tail -f /var/log/app.log"
-placement = "window"        # "window" (default) or "pane"
+command = "tail -f /var/log/app.log"  # required, non-empty string
+placement = "window"                  # "window" (default) or "pane"
 
-[slot.repl]
-command = "python3"
+[slot.server]
+command = "npm run dev"
 placement = "pane"
-split = "below"             # "right" (default) or "below"
+split = "right"                       # "right" (default) or "below"; only used for panes
 ```
 
-Without a config file, `~/projects` is searched at depth 1. Once a config file exists, only the
-`roots` it lists are searched. No default roots are added, so a config without `roots` finds no projects.
+### `roots`
 
-Discovery rules: hidden directories and symlinks are skipped. A directory containing `.git`
-is listed as a project and not searched further.
+Must be an array. Each entry is either a string (depth 1) or a table with `path` and an optional `depth`:
+
+- `depth` is how many levels below `path` to search. It must be an integer of at least 1. Depth 1
+  lists the immediate subdirectories of `path`; depth 2 also lists their subdirectories, and so on.
+- `$VARS` and a leading `~` are expanded, so one config can be shared across machines.
+- Roots that don't exist are ignored.
+- A directory containing `.git` is listed as a project and its children are not searched. A
+  checkout nested inside another project will not appear.
+- Hidden directories (names starting with `.`) and symlinks are skipped.
+- A project found by more than one root is listed once.
+
+If there is no config file, `~/projects` is searched at depth 1. Once a config file exists, only the
+`roots` it lists are searched. No defaults are added, so a config without `roots` finds no projects.
+
+### `[slot.NAME]`
+
+A slot is a named command that runs once per tmux session. Running it again focuses the existing
+window or pane instead of starting a second copy.
+
+- `NAME` may contain only letters, digits, `-` and `_`.
+- `command` is required. It runs in the project directory of the session you start it from, or in
+  the current directory if the session isn't a project.
+- `placement = "window"` creates a detached window for the slot and selects it on later runs.
+- `placement = "pane"` splits the session's current window and selects the pane on later runs.
+  `split = "right"` splits side by side; `split = "below"` splits top and bottom.
+- Slots are matched by tmux user options set when they're created. A window or pane you
+  create by hand with the same name is not treated as a slot.
+- When the command exits, its window or pane normally closes (tmux's default). Running the slot
+  again starts it fresh.
+- `tmux-project-switcher run NAME` works only inside a tmux session. `tmux-project-switcher slots`
+  lists the configured slots.
+
+### Discovery and session names
+
+- Projects shown in the picker exclude directories that already have an open session.
+- Session names come from directory names, with `.`, `:` and whitespace replaced by `_`
+  (so `my.app` becomes `my_app`). A name already used by a different path gets a `-2`, `-3`, ... suffix.
 
 ## Design notes
 
